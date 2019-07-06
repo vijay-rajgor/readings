@@ -1,0 +1,1 @@
+sudo docker run --name=testjoin -p 3306:3306 -e MYSQL_ROOT_PASSWORD=vijay -d mysql:5.5
