@@ -1,0 +1,309 @@
+package com.hibernate.service;
+
+import com.hibernate.model.Category;
+import com.hibernate.model.Stock;
+import com.hibernate.model.StockDailyRecord;
+import com.hibernate.model.Student;
+import com.hibernate.util.HibernateUtil;
+import org.hibernate.Session;
+
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static java.util.Arrays.asList;
+
+public class Operation {
+
+
+    /* Used Within Transaction
+    * Not returned Anything
+    * instance tracked for changes once persist is called
+    * On committing transaction or flushing session, update will be called for the fields changed after persisting instance
+    * eg.   Hibernate: insert into STUDENT (FIRST_NAME, LAST_NAME, SECTION) values (?, ?, ?)
+            Hibernate: update STUDENT set FIRST_NAME=?, LAST_NAME=?, SECTION=? where id=?
+    * */
+    public void persistStudent(String firstName,String lastName, String section){
+        Student student = new Student();
+        student.setFirstName(firstName);
+        student.setLastName(lastName);
+        student.setSection(section);
+
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        session.beginTransaction();
+
+        session.persist(student);
+        student.setFirstName("Nirav");
+        student.setLastName("Rajgor");
+        session.getTransaction().commit();
+        session.close();
+    }
+
+
+
+    /**
+     * When used without transaction or don't flush the session only stores Instance in database which is used in save method, cascade want apply
+     * Return Serializable id of new inserted record in database
+     * Query will be fired as soon as U call the save method for (Main instance)
+     * On committing transaction or flushing session, update will be called for the fields changed after save (method) instance
+     * eg.   Hibernate: insert into STUDENT (FIRST_NAME, LAST_NAME, SECTION) values (?, ?, ?)
+            Hibernate: update STUDENT set FIRST_NAME=?, LAST_NAME=?, SECTION=? where id=?
+     * */
+    public int saveStudent(String firstName, String lastName, String section) {
+        Student student = new Student();
+        student.setFirstName(firstName);
+        student.setLastName(lastName);
+        student.setSection(section);
+
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        session.beginTransaction();
+
+        int id = (Integer) session.save(student);
+        student.setFirstName("Nirav");
+        student.setLastName("Rajgor");
+        session.getTransaction().commit();
+        session.close();
+        return id;
+    }
+
+    /**
+     * This method returns list of all persisted Student objects/tuples from
+     * database
+     */
+    public List<Student> getAllStudents() {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        session.beginTransaction();
+
+        @SuppressWarnings("unchecked")
+        List<Student> employees = (List<Student>) session.createQuery(
+                "FROM Student s ORDER BY s.firstName ASC").list();
+
+        session.getTransaction().commit();
+        session.close();
+        return employees;
+    }
+
+    /**
+     * Used within transaction
+     * Need PK(identifier) to be exist in DB Otherwise Persistence Exception
+     * When we have a detached entity at that time we use update to change record in database
+     * if entity is persistent then no need to use update because it will automatically update when session is flushed of transaction is committed
+     */
+    public void updateStudent(int id, String section) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        session.beginTransaction();
+
+        Student student = (Student) session.get(Student.class, id);
+        session.evict(student);
+        student.setSection(section);
+        session.update(student);
+        //No need to update if student is persistence entity as it will be updated automatically on transaction close.
+        //when student is detached entity need to use update
+        session.getTransaction().commit();
+        session.close();
+    }
+
+
+    /*
+    org.hibernate.NonUniqueObjectException: A different object with the same identifier value was already associated with the session
+
+    if one entity instance is already persisted and you are going to use update method on another object with same PK(Identifier)
+    eg.
+    Student student = (Student) session.get(Student.class, id);
+        Student student1 = new Student();
+        session.update(student1);
+     */
+    public void updateStudentError(int id, String section) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        session.beginTransaction();
+
+        Student student = (Student) session.get(Student.class, id);
+        Student student1 = new Student();
+        student1.setId(id);
+        student1.setFirstName("VVV");
+        student1.setLastName("RRR");
+        student1.setSection("None");
+        student.setSection(section);
+        session.update(student1);//No need to update manually as it will be updated automatically on transaction close.
+        session.getTransaction().commit();
+        session.close();
+    }
+
+
+    /*
+    Used within transaction boundry
+    Solution for updateStudentError
+    if we have one persistence instance of the entity and identifier is available in session (persistence context) and we want other instance of the same
+    entity with same identifier to update, already persistence instance fields with instance fields provide in the merge method
+
+    Simply::
+    Persistence instance fields are replaced by instance fields which is used in merge method
+    and return new persistence instance
+     */
+    public void mergeStudent(int id, String section) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        session.beginTransaction();
+
+        Student student = (Student) session.get(Student.class, id);
+        Student student1 = new Student();
+        student1.setId(id);
+        student1.setFirstName("VVVV");
+        student1.setLastName("RRRV");
+        student1.setSection("None1");
+        student.setSection("Hello");
+        Student newStudent = (Student)session.merge(student1);//No need to update manually as it will be updated automatically on transaction close.
+        session.getTransaction().commit();
+        //session.flush();
+        session.close();
+    }
+
+
+
+    /*
+    Used within transaction boundries
+    if record exists in persistence context then update otherwise insert new record
+     */
+    public void saveOrUpdateStudent(String firstName, String lastName, String section) {
+        Student student = new Student();
+        student.setFirstName(firstName);
+        student.setLastName(lastName);
+        student.setSection(section);
+
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        session.beginTransaction();
+
+        session.saveOrUpdate(student);
+       // session.flush();;
+       session.getTransaction().commit();
+        session.close();
+
+    }
+
+    public void saveOrUpdateExistingStudent(int id) {
+
+
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        session.beginTransaction();
+        Student student = (Student) session.get(Student.class,id);
+        student.setSection("Updated");
+        session.saveOrUpdate(student);
+        // session.flush();;
+        session.getTransaction().commit();
+        session.close();
+
+    }
+
+    /**
+     * This method deletes a specific Student object
+     */
+    public void deleteStudent(int id) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        session.beginTransaction();
+
+        Student student = (Student) session.get(Student.class, id);
+        session.delete(student);
+        session.getTransaction().commit();
+        session.close();
+    }
+
+   /* public void onetone(){
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        session.beginTransaction();
+
+        Stock stock = new Stock();
+        stock.setStockCode("70521");
+        stock.setStockName("PADINI1");
+
+
+        StockDailyRecord stockDailyRecords = new StockDailyRecord();
+        stockDailyRecords.setPriceOpen(new Float("1.2"));
+        stockDailyRecords.setPriceClose(new Float("1.1"));
+        stockDailyRecords.setPriceChange(new Float("10.0"));
+        stockDailyRecords.setVolume(3000000L);
+        stockDailyRecords.setDate(new Date());
+
+        stockDailyRecords.setStock(stock);
+        stock.setStockDailyRecord(stockDailyRecords);
+
+        session.save(stockDailyRecords);
+        session.getTransaction().commit();
+        session.close();
+    }*/
+
+    /*public void onetomany(){
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        session.beginTransaction();
+
+        Stock stock = new Stock();
+        stock.setStockCode("70521");
+        stock.setStockName("PADINI1");
+
+
+        StockDailyRecord stockDailyRecords = new StockDailyRecord();
+        stockDailyRecords.setPriceOpen(new Float("1.2"));
+        stockDailyRecords.setPriceClose(new Float("1.1"));
+        stockDailyRecords.setPriceChange(new Float("10.0"));
+        stockDailyRecords.setVolume(3000000L);
+        stockDailyRecords.setDate(new Date());
+        stockDailyRecords.setStock(stock);
+
+        StockDailyRecord stockDailyRecords1 = new StockDailyRecord();
+        stockDailyRecords1.setPriceOpen(new Float("1.21"));
+        stockDailyRecords1.setPriceClose(new Float("1.11"));
+        stockDailyRecords1.setPriceChange(new Float("10.01"));
+        stockDailyRecords1.setVolume(3000001L);
+        stockDailyRecords1.setDate(new Date());
+        stockDailyRecords1.setStock(stock);
+
+        StockDailyRecord stockDailyRecords2 = new StockDailyRecord();
+        stockDailyRecords2.setPriceOpen(new Float("1.22"));
+        stockDailyRecords2.setPriceClose(new Float("1.12"));
+        stockDailyRecords2.setPriceChange(new Float("10.02"));
+        stockDailyRecords2.setVolume(3000002L);
+        stockDailyRecords2.setDate(new Date());
+        stockDailyRecords2.setStock(stock);
+
+
+       // stock.getStockDailyRecord().addAll(asList(stockDailyRecords,stockDailyRecords1));
+
+        session.save(stockDailyRecords);
+        session.save(stockDailyRecords1);
+        session.save(stockDailyRecords2);
+        //session.save(stock);
+        session.getTransaction().commit();
+        session.close();
+    }*/
+
+
+    public void manytomany(){
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        session.beginTransaction();
+
+        Stock stock = new Stock();
+        stock.setStockCode("70521");
+        stock.setStockName("PADINI1");
+
+        Stock stock1 = new Stock();
+        stock1.setStockCode("001");
+        stock1.setStockName("VR");
+
+
+        Category category1 = new Category("CONSUMER", "CONSUMER COMPANY");
+        Category category2 = new Category("INVESTMENT", "INVESTMENT COMPANY");
+
+        Set<Category> categories = new HashSet<Category>();
+        categories.add(category1);
+        categories.add(category2);
+
+        stock.setCategories(categories);
+        stock1.setCategories(categories);
+
+        session.save(stock);
+        session.save(stock1);
+        session.getTransaction().commit();
+        System.out.println("Done");
+        session.close();
+    }
+}
+

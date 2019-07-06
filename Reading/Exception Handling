@@ -1,0 +1,36 @@
+Exceptions 
+
+1) JVM Exception (JVM Raises Exception when particular situation occurs)
+2) Programming Exception(Programmer throws some exception depending on buisness requirement or API exception)
+
+
+JVM
+- ArrayIndexOutOfBoundsException(U)
+- NullPointerException(U)
+- ClassCastException(U)
+- StackOverflowError(U)
+- NoClassDefFoundError(U)
+- ExceptionInInitializerError(U)   -> Exception in executing static variable assignment or static block static int a=10/0
+
+
+Programatic (Programmer or Api Developer raises)
+- IllegalArgumentException(U)    thread.setPriority(18)
+	- NumberFormatException(U)	Integer.parseInt("ten")
+- IllegalStateException(U)	(call a method at wrong time)
+	-IllegalThreadStateException	thread.start(); thread.start();
+
+- AssertionError(U)	asser(x>10) x not gt 10 then AssertionError
+
+
+
+java.lang.AutoCloseable
+
+try(     BufferedReader br = new BufferedReader(new FileReader("1.txt"))    implicitly final){
+}
+
+
+
+
+
+
+-- InvalidAccessException

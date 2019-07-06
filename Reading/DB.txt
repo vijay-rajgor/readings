@@ -1,0 +1,75 @@
+DB
+
+Attribute = Field
+Tupple = Row
+
+Functional Dependency(FD) :  (a -> b) for a Single Attribute or Set Of Attributes Same Tupple is Given(Returned)
+
+A	B	C	D
+1	b1	c1	d1	
+2	b2	c2	d2
+3	b3	c3	d3
+
+AB -> C   = c1
+BC -> A   = 1
+AB -> C   = c1
+
+
+Super Key : Attribute or a Set of Attribute which will return all the availabel Attributes
+
+A -> BCD
+AB -> CD
+ABC -> D
+
+AB -> D  (Not a Super Key)
+
+Candidate Key : Minimal Super key is Candidate Key 
+
+eg.
+A -> BCD	This is Candidate Key.
+AB -> CD
+ABC -> D
+
+
+Partial Dependency ::
+
+	Partial dependency means that a nonprime attribute is functionally dependent on part of a candidate key. (A nonprime attribute is an attribute that's not part of any candidate key.)
+
+For example, let's start with R{ABCD}, and the functional dependencies AB->CD and A->C.
+
+The only candidate key for R is AB. C and D are a nonprime attributes. C is functionally dependent on A. A is part of a candidate key. That's a partial dependency.
+
+
+
+Transitive dependency – 
+
+	When a non-prime attribute depends on other non-prime attributes rather than depending upon the prime attributes or primary key.
+
+	If A->B and B->C are two FDs then A->C is called transitive dependency.
+
+		STUDENT (STUD_NO, STUD_NAME, STUD_PHONE, STUD_STATE, STUD_COUNTRY,STUD_AGE) as:
+		
+		STUDENT (STUD_NO, STUD_NAME, STUD_PHONE, STUD_STATE, STUD_AGE)
+		STATE_COUNTRY (STATE, COUNTRY)
+
+
+Prime and Not Prime ::
+			Attributes that form a candidate key of a relation, i.e. attributes of candidate key, are called prime attributes. And rest of the attributes of the relation are non prime.
+
+Partial Dependency – If proper subset of candidate key determines non-prime attribute, it is called partial dependency.
+
+    Example 1 – In relation STUDENT_COURSE given in Table 3,
+
+    FD set: {COURSE_NO->COURSE_NAME}
+    Candidate Key: {STUD_NO, COURSE_NO}
+
+ 	STUDENT_COURSE (STUD_NO, COURSE_NO, COURSE_NAME)
+
+	STUDENT_COURSE (STUD_NO, COURSE_NO)
+	COURSE (COURSE_NO, COURSE_NAME)
+
+
+
+
+
+
